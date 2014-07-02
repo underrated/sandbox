@@ -5,10 +5,11 @@
 using namespace std;
 
 struct config_object {
-    unsigned char x[1024];.
+    unsigned char x[1024];
 };
 
 struct gc_table_entry_base {
+
 	int get_ref_count() {
 		return ref_count;
 	}
@@ -20,9 +21,18 @@ struct gc_table_entry_base {
 	void dec_ref_count() {
 		ref_count--;
 	}
+
+	void set_size(size_t s) {
+		size=s;
+	}
+
+	size_t get_size() {
+		return size;
+	}
 	
 	private:
 	int ref_count;
+	size_t size;
 
 }
 
@@ -100,15 +110,24 @@ struct gc_pointer:gc_pointer_base {
     gc_pointer() {}
     ~gc_pointer() {}
 
-    T* operator =(T* other) {
-
+    gc_pointer<T>& operator =(T* other) {
+	    // if content==null
+	    // decrease reference count of current table entry
+	    //
+	    // create new table entry
+	    // set its size
+	    // increment ref_count
+	    // add it to table
+		
     }
+
+
 
     private:
         T* content;
 };
 
-int main() {
+void testAllocSizes() {
     gc_manager* gc = gc_manager::self();
     gc->set_limit(5*1024*1024);// 5 MB
     
@@ -131,5 +150,9 @@ int main() {
     cout<<"Test passed :-)"<<endl;
 
     delete gc;
-    return 0;
+}
+
+int main() {
+	testAllocSizes();
+	return 0;
 }
