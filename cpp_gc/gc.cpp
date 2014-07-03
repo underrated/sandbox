@@ -132,7 +132,7 @@ void gc_manager::collect() {
 
 void gc_manager::add_table_entry(gc_table_entry_base* entry, list<gc_table_entry_base*>::iterator& it) {
 	table.push_back(entry);
-	it=table.end();
+	it=--table.end();
 	heap_size+=(*it)->get_size();
 }
 
@@ -168,13 +168,11 @@ struct gc_pointer:gc_pointer_base {
 	} 
 	if(new_entry) {
 	        // Create new table entry
-		gc_table_entry<T>* entry = new gc_table_entry<T>(content);
+		gc_table_entry<T>* entry = new gc_table_entry<T>(other);
 		entry->inc_ref_count();
 		gcm->add_table_entry(entry, table_entry);
 	}
-
 	content = other;
-
     }
 
     void operator =(T* other) {
