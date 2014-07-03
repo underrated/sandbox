@@ -10,7 +10,10 @@ struct config_object {
 
 struct gc_table_entry_base {
 
-	virtual void free()=0;
+	gc_table_entry_base() { }
+	~gc_table_entry_base() { }
+
+	virtual void free() { } 
 
 	int get_ref_count() {
 		return ref_count;
@@ -32,7 +35,7 @@ struct gc_table_entry_base {
 		return size;
 	}
 	
-	private:
+	protected:
 	int ref_count;
 	size_t size;
 
@@ -49,7 +52,7 @@ struct gc_table_entry:gc_table_entry_base {
 
 	~gc_table_entry() {}
 	
-	virtual void void free() {
+	virtual void free() {
 		delete content;
 	}
 	private:
@@ -64,7 +67,7 @@ struct gc_manager {
 	long int heap_size_limit;
 	long int heap_size;
 	
-	list<gc_table_entry_basei*> table;
+	list<gc_table_entry_base*> table;
 	
 	gc_manager(); 
 	
@@ -113,12 +116,24 @@ long int gc_manager::get_heap_size() {
 }
 
 void gc_manager::collect() {
-
+	list<gc_table_entry_base*>::iterator it;
+	it = table.begin();
+	while(it!=table.end()) {
+		if((*it)->get_ref_count()>0)
+			++it;
+		else {
+			heap_size-=(*it)->get_size();
+			(*it)->free();
+			delete (*it);
+			it=table.erase(it);
+		}
+	}
 }
 
-void gc_manager::add_table_entry(gc_table_entry_base* entry,list<gc_table_entry_base*>::iterator& it) {
-
-
+void gc_manager::add_table_entry(gc_table_entry_base* entry, list<gc_table_entry_base*>::iterator& it) {
+	table.push_back(entry);
+	it=table.end();
+	heap_size+=(*it)->get_size();
 }
 
 void remove_table_entry(list<gc_table_entry_base*>::iterator it) {
@@ -127,7 +142,10 @@ void remove_table_entry(list<gc_table_entry_base*>::iterator it) {
 
 
 struct gc_pointer_base {
-	virtual void* get_content()=0;
+	virtual void* get_content(){ };
+	virtual size_t get_size() { return 0; }
+	virtual void set_size(size_t s) { }
+	virtual list<gc_table_entry_base*>::iterator get_table_entry() { }
 };
 
 template <typename T=int>
@@ -138,32 +156,46 @@ struct gc_pointer:gc_pointer_base {
 	    gcm = gc_manager::self();
 	    size = sizeof(T);
     }
-    ~gc_pointer() {}
+    ~gc_pointer(){
+	    (*table_entry)->dec_ref_count();
+    }
+
+    // NOTE : when other is of a type derived from T
+    // it must be casted to T*
+    void assign_raw_pointer(T* other, bool new_entry) {
+	if(content!=NULL) {
+	        (*table_entry)->dec_ref_count();
+	} 
+	if(new_entry) {
+	        // Create new table entry
+		gc_table_entry<T>* entry = new gc_table_entry<T>(content);
+		entry->inc_ref_count();
+		gcm->add_table_entry(entry, table_entry);
+	}
+
+	content = other;
+
+    }
 
     void operator =(T* other) {
-	    if(content!=NULL) {
-		    (*table_entry).dec_ref_count();
-	    } 
-		    // Create new table entry
-		    gc_table_entry<T>* entry = new gc_table_entry<T>(content);
-		    entry->inc_ref_count();
-		    gcm->add_table_entry(entry, table_entry);
+	    assign_raw_pointer(other,true);
+    }
 
 
-
-
-	    // if content==null
-	    // decrease reference count of current table entry
-	    //
-	    // create new table entry
-	    // set its size
-	    // increment ref_count
-	    // add it to table
-		
+    void operator =(gc_pointer<T> other) {
+	assign_raw_pointer(other.get_typed_content(),false);
+	table_entry = other.get_table_entry();
+	(*table_entry)->inc_ref_count();
     }
 
     void operator =(gc_pointer_base other) {
-
+	void* ptr = other.get_content();
+	T* other_ptr = (T*)ptr;
+	assign_raw_pointer(other_ptr,false);
+	size = other.get_size();
+	table_entry = other.get_table_entry();
+	(*table_entry)->inc_ref_count();
+	(*table_entry)->set_size(size);
     }
 
     T* operator ->() {
@@ -174,17 +206,26 @@ struct gc_pointer:gc_pointer_base {
 	    return other==content;
     }
 
-    size_t get_size() { return size; }
-    void set_size(size_t s) { size=s; }
+    virtual size_t get_size() { return size; }
+    virtual void set_size(size_t s) { size=s; }
 
     virtual void* get_content() {
 	    return (void*)content;
     }
 
+    T* get_typed_content() {
+	    return content;
+    }
+
+    virtual list<gc_table_entry_base*>::iterator get_table_entry(){
+	    return table_entry;
+    }
+
     private:
-    	list<gc_table_entry_base>::iterator table_entry;
+    	list<gc_table_entry_base*>::iterator table_entry;
         T* content;
 	gc_manager* gcm;
+	size_t size;
 };
 
 void testAllocSizes() {
@@ -195,7 +236,7 @@ void testAllocSizes() {
 
     cobj = new config_object();
     other_cobj = new config_object();
-    x = new config_object;
+    x = new config_object();
     
     cobj = other_cobj;
 
