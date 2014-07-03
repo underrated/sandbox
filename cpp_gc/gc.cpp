@@ -4,9 +4,6 @@
 
 using namespace std;
 
-struct config_object {
-    unsigned char x[1024];
-};
 
 struct gc_table_entry_base {
 
@@ -14,6 +11,9 @@ struct gc_table_entry_base {
 	~gc_table_entry_base() { }
 
 	virtual void free() { } 
+	virtual void print() {
+		cout<<"ref_count="<<ref_count<<"size="<<size<<endl;
+	}
 
 	int get_ref_count() {
 		return ref_count;
@@ -51,6 +51,10 @@ struct gc_table_entry:gc_table_entry_base {
 	}
 
 	~gc_table_entry() {}
+
+	virtual void print() {
+		cout<<"location="<<content<<" ref_count="<<ref_count<<" size="<<size<<endl;
+	}
 	
 	virtual void free() {
 		delete content;
@@ -88,6 +92,10 @@ struct gc_manager {
 	void add_table_entry(gc_table_entry_base*,list<gc_table_entry_base*>::iterator&);
 
 	void remove_table_entry(list<gc_table_entry_base*>::iterator);
+
+	void print_table();
+
+	void clear_heap();
 };
 
 
@@ -130,14 +138,34 @@ void gc_manager::collect() {
 	}
 }
 
+void gc_manager::clear_heap() {
+	list<gc_table_entry_base*>::iterator it;
+	it = table.begin();
+	while(it!=table.end()) {
+		heap_size-=(*it)->get_size();
+		(*it)->free();
+		delete (*it);
+		it=table.erase(it);
+	}
+}
+
 void gc_manager::add_table_entry(gc_table_entry_base* entry, list<gc_table_entry_base*>::iterator& it) {
 	table.push_back(entry);
 	it=--table.end();
 	heap_size+=(*it)->get_size();
 }
 
-void remove_table_entry(list<gc_table_entry_base*>::iterator it) {
+void gc_manager::remove_table_entry(list<gc_table_entry_base*>::iterator it) {
 
+}
+
+void gc_manager::print_table() {
+	list<gc_table_entry_base*>::iterator it;
+	cout<<"Heap contents:"<<endl;
+	cout<<"==============="<<endl;
+	for(it=table.begin();it!=table.end();++it)
+		(*it)->print();
+	cout<<"==============="<<endl<<endl;
 }
 
 
@@ -165,6 +193,10 @@ struct gc_pointer:gc_pointer_base {
     void assign_raw_pointer(T* other, bool new_entry) {
 	if(content!=NULL) {
 	        (*table_entry)->dec_ref_count();
+		if(other=NULL) {
+			content = NULL;
+			return;
+		}
 	} 
 	if(new_entry) {
 	        // Create new table entry
@@ -226,35 +258,74 @@ struct gc_pointer:gc_pointer_base {
 	size_t size;
 };
 
+
+struct config_object {
+    unsigned char x[1024];
+};
+
 void testAllocSizes() {
+
     gc_manager* gc = gc_manager::self();
     gc->set_limit(5*1024*1024);// 5 MB
     
     gc_pointer<config_object> cobj,other_cobj,x;;
 
+    cout<<"*Creating object*"<<endl;
     cobj = new config_object();
+    gc->print_table();
+
+    cout<<"*Creating object*"<<endl;
     other_cobj = new config_object();
+    gc->print_table();
+
+    cout<<"*Creating object*"<<endl;
     x = new config_object();
+    gc->print_table();
     
+    cout<<"*Overwriting object with other object*"<<endl;
+    // TODO the ref_counts don's update correctly, FIX IT 
     cobj = other_cobj;
+    other_cobj= x;
+    gc->print_table();
 
     // Test that the allocated heap size is correct
     assert(gc->get_heap_size()==3*1024);
 
+    cout<<"*Collecting garbage*"<<endl;
     gc->collect();
+    gc->print_table();
     
     // Test that cobj's initial instance has been deallocated
-    assert(gc->get_heap_size()==2*1024);
+    assert(gc->get_heap_size()==1*1024);
+
+    cout<<"*Deleting all allocated objects*"<<endl;
+    gc->clear_heap();
+    gc->print_table();
+
+    // Check that the heap got cleared
+    assert(gc->get_heap_size()==0);
 
     cout<<"Test passed :-)"<<endl;
 
     delete gc;
 }
 
+// Test that the ref_counts update correctly
 void testRefCount() {
 }
 
+// Assign object of a derivative class
+// Check that size updates correctly
+// Check that virtual methods are called correctly
 void testInheritance() {
+}
+
+// Assign a null raw pointer
+void testRawNullAssign() {
+}
+
+// Assign a null smart pointer
+void testNullSPAssign() {
 }
 
 
