@@ -117,10 +117,11 @@ void gc_manager::collect() {
 }
 
 void gc_manager::add_table_entry(gc_table_entry_base* entry,list<gc_table_entry_base*>::iterator& it) {
-
-
+	table.push_back(entry);
+	it = table.end();
 }
 
+// Might not need this
 void remove_table_entry(list<gc_table_entry_base*>::iterator it) {
 
 }
