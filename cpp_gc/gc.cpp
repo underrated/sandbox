@@ -238,6 +238,14 @@ struct gc_pointer:gc_pointer_base {
 	    return other==content;
     }
 
+    bool operator ==(gc_pointer<T> other) {
+	    return other.get_typed_content()==content;
+    }
+
+    bool operator ==(gc_pointer_base other) {
+	    return other.get_content()==(void*)content;
+    }
+
     virtual size_t get_size() { return size; }
     virtual void set_size(size_t s) { size=s; }
 
