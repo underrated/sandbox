@@ -186,8 +186,7 @@ struct gc_pointer:gc_pointer_base {
 	    end_of_assignment = false;
     }
     ~gc_pointer(){
-	    if(!end_of_assignment)
-		    (*table_entry)->dec_ref_count();
+	    (*table_entry)->dec_ref_count();
     }
 
     // NOTE : when other is of a type derived from T
@@ -215,13 +214,13 @@ struct gc_pointer:gc_pointer_base {
     }
 
 
-    void operator =(gc_pointer<T> other) {
+    void operator =(gc_pointer<T>& other) {
 	assign_raw_pointer(other.get_typed_content(),false);
 	table_entry = other.get_table_entry();
 	(*table_entry)->inc_ref_count();
     }
 
-    void operator =(gc_pointer_base other) {
+    void operator =(gc_pointer_base& other) {
 	void* ptr = other.get_content();
 	T* other_ptr = (T*)ptr;
 	assign_raw_pointer(other_ptr,false);
@@ -288,7 +287,6 @@ void testAllocSizes() {
     gc->print_table();
     
     cout<<"*Overwriting object with other object*"<<endl;
-    // TODO the ref_counts don's update correctly, FIX IT 
     cobj = other_cobj;
     other_cobj= x;
     gc->print_table();
