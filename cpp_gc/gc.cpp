@@ -198,7 +198,7 @@ struct gc_pointer:gc_pointer_base {
 			return;
 		}
 	} 
-	if(new_entry) {
+	if(new_entry && other!=NULL) {
 	        // Create new table entry
 		gc_table_entry<T>* entry = new gc_table_entry<T>(other);
 		entry->inc_ref_count();
