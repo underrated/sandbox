@@ -316,7 +316,6 @@ void testAllocSizes() {
     // Check that the heap got cleared
     assert(gc->get_heap_size()==0);
 
-    cout<<"Test passed :-)"<<endl;
 
     delete gc;
 }
@@ -344,6 +343,10 @@ int main() {
 	testAllocSizes();
 	testRefCount();
 	testInheritance();
+	testRawNullAssign();
+	testNullSPAssign();
+	
+    	cout<<"All tests passed :-)"<<endl;
 	return 0;
 }
 
