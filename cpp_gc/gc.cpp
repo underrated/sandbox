@@ -101,7 +101,7 @@ struct gc_manager {
 
 gc_manager* gc_manager::m_self=NULL;
 
-gc_manager::gc_manager() {
+gc_manager::gc_manager():table() {
     heap_size = 0;
 }
 
@@ -317,7 +317,6 @@ void testAllocSizes() {
     assert(gc->get_heap_size()==0);
 
 
-    delete gc;
 }
 
 // Test that the ref_counts update correctly
@@ -352,7 +351,10 @@ void testRefCount() {
 
 	gc->print_table();
 
-	delete gc;
+	gc->collect();
+
+	gc->print_table();
+
 
 }
 
@@ -379,6 +381,9 @@ int main() {
 	testNullSPAssign();
 	
     	cout<<"All tests passed :-)"<<endl;
+
+	delete gc_manager::self();
+
 	return 0;
 }
 
