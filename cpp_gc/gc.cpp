@@ -321,7 +321,39 @@ void testAllocSizes() {
 }
 
 // Test that the ref_counts update correctly
+struct wheel {
+	int diameter;
+};
+struct gear {
+	int nof_steps;
+};
+struct car {
+	gc_pointer<wheel> w;
+	gc_pointer<gear> g;
+
+	car():w(),g() {
+		w = new wheel();
+		g = new gear();
+	}
+};
+
 void testRefCount() {
+	gc_manager* gc = gc_manager::self();
+	gc_pointer<car> my_car,other_car;
+	gc_pointer<wheel> my_wheel;
+
+	my_car = new car();
+	other_car = new car();
+	my_wheel = my_car->w;
+
+	gc->print_table();
+
+	my_car = other_car;
+
+	gc->print_table();
+
+	delete gc;
+
 }
 
 // Assign object of a derivative class
