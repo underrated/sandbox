@@ -170,10 +170,12 @@ void gc_manager::print_table() {
 
 
 struct gc_pointer_base {
+	gc_pointer_base() {}
 	virtual void* get_content(){ };
 	virtual size_t get_size() { return 0; }
 	virtual void set_size(size_t s) { }
 	virtual list<gc_table_entry_base*>::iterator get_table_entry() { }
+	virtual int get_ref_count() {}
 };
 
 template <typename T=int>
@@ -183,7 +185,6 @@ struct gc_pointer:gc_pointer_base {
 	    content = NULL;
 	    gcm = gc_manager::self();
 	    size = sizeof(T);
-	    end_of_assignment = false;
     }
     ~gc_pointer(){
 	    (*table_entry)->dec_ref_count();
@@ -206,7 +207,6 @@ struct gc_pointer:gc_pointer_base {
 		gcm->add_table_entry(entry, table_entry);
 	}
 	content = other;
-	end_of_assignment = true;
     }
 
     void operator =(T* other) {
@@ -260,8 +260,10 @@ struct gc_pointer:gc_pointer_base {
     virtual list<gc_table_entry_base*>::iterator get_table_entry(){
 	    return table_entry;
     }
-
-    bool end_of_assignment;
+    
+    virtual int get_ref_count() {
+	    return (*table_entry)->get_ref_count();
+    }
 
     private:
     	list<gc_table_entry_base*>::iterator table_entry;
@@ -340,21 +342,36 @@ void testRefCount() {
 	gc_manager* gc = gc_manager::self();
 	gc_pointer<car> my_car,other_car;
 	gc_pointer<wheel> my_wheel;
+	
+	cout<<"==Running test testRefCount=="<<endl;
 
+	cout<<"Allocating some objects"<<endl;
 	my_car = new car();
 	other_car = new car();
 	my_wheel = my_car->w;
 
-	gc->print_table();
+	cout<<"my_car : ";(*my_car.get_table_entry())->print();
+	cout<<"my_car->w : ";(*my_car->w.get_table_entry())->print();
+	cout<<"my_car->g : ";(*my_car->g.get_table_entry())->print();
+	cout<<"other_car : ";(*other_car.get_table_entry())->print();
+	cout<<"other_car->w : ";(*other_car->w.get_table_entry())->print();
+	cout<<"other_car->g : ";(*other_car->g.get_table_entry())->print();
+	cout<<"my_wheel : ";(*my_wheel.get_table_entry())->print();
 
+	gc->print_table();
+	
+	cout << "Overwriting an object" << endl;
 	my_car = other_car;
+	assert( other_car.get_ref_count() == 2  );
+	assert( my_wheel.get_ref_count()  == 2  );
 
 	gc->print_table();
 
+	cout << "Collecting garbage" << endl;
 	gc->collect();
+	assert(my_wheel.get_ref_count() == 1);
 
 	gc->print_table();
-
 
 }
 
@@ -372,6 +389,10 @@ void testRawNullAssign() {
 void testNullSPAssign() {
 }
 
+// Create collections of smart pointers and check that they are deallocated correctly
+void testSPointerCollection() {
+}
+
 
 int main() {
 	testAllocSizes();
@@ -379,6 +400,7 @@ int main() {
 	testInheritance();
 	testRawNullAssign();
 	testNullSPAssign();
+	testSPointerCollection();
 	
     	cout<<"All tests passed :-)"<<endl;
 

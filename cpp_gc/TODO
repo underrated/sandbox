@@ -1,0 +1,14 @@
+TODO:
+DEFER:
+DELEGATE:
+
+COLLECT:
+REFERENCE:
+SOMEDAY MAYBE:
+* replace list with 2 vectors
+** one vector for good data and one for garbage data
+** when cleaning deallocate pointer from the garbage vector
+** then clear the vector
+** each table entry should also contain an index of its entry in the ???
+** clarify this IDEA
+BAD IDEAS:
