@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TreeView</title>
+    <script src="jse.js"></script>
+</head>
+<body>
+    
+<ul id="tree">
+</ul>
+
+<script>
+var container = document.getElementById("tree");
+container.style.listStyleType = "none";
+
+// Create the model
+var root = {
+    title: "root",
+    type: "section",
+    elements: [
+        { title: "el1", type: "element" },
+        { title: "el2", type: "element" },
+        { title: "el3", type: "element" },
+        { 
+            title: "nested", 
+            type: "section",
+            elements: [
+                { title: "el11", type: "element"},
+                { title: "el12", type: "element"},
+                { 
+                    title: "nested2",
+                    type: "section",
+                    elements: [
+                        { title: "el131", type: "element"}
+                    ]
+                }
+            ]
+        },
+        { title: "el4", type: "element" }
+    ]
+}
+// Create the view
+var view = new TreeView(root, container);
+view.populateList();
+
+</script>
+
+</body>
+</html>
