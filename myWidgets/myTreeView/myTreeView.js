@@ -28,7 +28,7 @@ ElementViewNode.prototype.createDOMElement = function() {
     result.viewNode = this;
 
     return result;
-}
+};
 
 /*
  * SectionViewNode
@@ -56,7 +56,7 @@ SectionViewNode.prototype.expand = function() {
     }
     this.isExpanded = true;
     this.pmContainer.innerHTML = " - ";
-}
+};
 
 // 
 // collapse - Collapses the visible list
@@ -66,8 +66,7 @@ SectionViewNode.prototype.collapse = function() {
         this.ulContainer.removeChild(this.ulContainer.firstChild);
     this.isExpanded = false;
     this.pmContainer.innerHTML = " + ";
-}
-
+};
 //
 // createDOMElement - creates a DOM element to make the section visible
 //
@@ -86,7 +85,7 @@ SectionViewNode.prototype.createDOMElement = function() {
             this.parentNode.viewNode.collapse();
         else 
             this.parentNode.viewNode.expand();
-    }
+    };
     
     // Create the title container
     var titleDiv = document.createElement("DIV");
@@ -109,7 +108,7 @@ SectionViewNode.prototype.createDOMElement = function() {
     result.viewNode = this;
     
     return result;
-}
+};
 
 /*
  * TreeView 
@@ -126,5 +125,5 @@ function TreeView(model, container) {
 TreeView.prototype.populateList = function() {
     var rootNode = new SectionViewNode(this.model);
     this.container.appendChild(rootNode.createDOMElement());
-}
+};
 
