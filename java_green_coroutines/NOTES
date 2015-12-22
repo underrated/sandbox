@@ -1,0 +1,10 @@
+I tried to implement coroutines in java using a trick that was used in C and C++ and which involves the use of a switch statement.
+
+The C/C++ tricks are documented here:
+http://www.chiark.greenend.org.uk/~sgtatham/coroutines.html
+http://www.codeproject.com/Tips/29524/Generators-in-C
+
+Unfortunately we can't apply the trick in Java...at least not as elegant as in C/C++.
+That is because, in Java, you are not allowed to use case statements inside if/while/for{} blocks because they will be considered as being outside of the switch block and be considered "orphaned case statements".
+Control statements are still possible but some really weird manipulations need to be done and the final code will look more like assembly than Java. Life is life...you can't have a cake and eat it too.
+
